@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class CopyAndRenameImagesService extends Service<Void> {
@@ -54,20 +56,30 @@ class CopyAndRenameImagesTask extends Task<Void> {
 
     @Override
     protected Void call() throws Exception {
+        // TODO - check if files exist
         updateProgress(0, files.length);
         Files.createDirectories(directory);
+        Map<String, String> replacements  = new HashMap<>();
         for (int i = 0; i < files.length; i++) {
             if (isCancelled() ) {
                 break;
             }
             Path sourceFile = files[i];
             String sourceFileName = sourceFile.getFileName().toString();
-            String sourceFileNameExt = sourceFileName.substring(sourceFileName.lastIndexOf('.'));
-            // TODO: pattern must have more user friendly format
-            String targetFileName = String.format(pattern, startIndex + i) + sourceFileNameExt;
+            String sourceFileNameExt = "";
+            int extIndex = sourceFileName.lastIndexOf('.');
+            if (extIndex > 0) {
+                sourceFileNameExt = sourceFileName.substring(extIndex);
+                replacements.put("{NAME}", sourceFileName.substring(0, extIndex));
+                replacements.put("{FORMAT}", sourceFileNameExt.substring(1).toUpperCase());
+            } else {
+                replacements.put("{NAME}", sourceFileName);
+                replacements.put("{FORMAT}", "");
+            }
+
+            String targetFileName = StringReplacer.replace(pattern, startIndex + i, replacements) + sourceFileNameExt;
             Path targetFile = directory.resolve(targetFileName);
             if (Files.exists(targetFile)) {
-                // TODO - optionally rename
                 try {
                     Files.delete(targetFile);
                 } catch (IOException e) {

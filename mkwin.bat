@@ -1,13 +1,13 @@
-"C:\Program Files\Java\jdk1.8.0_112\bin\javapackager.exe" -createjar -v ^
+"C:\Program Files\Java\jdk1.8.0_144\bin\javapackager.exe" -createjar -v ^
    -outdir build ^
    -outfile limo ^
    -srcdir out\production\limo ^
    -appclass com.forman.limo.Main
 
-"C:\Program Files\Java\jdk1.8.0_112\bin\javapackager.exe" -deploy -v ^
+"C:\Program Files\Java\jdk1.8.0_144\bin\javapackager.exe" -deploy -v ^
    -native installer ^
    -name "limo" ^
-   -title "Limo Installer" ^
+   -title "Limo" ^
    -description "Lowly Image Organizer" ^
    -vendor "Norman Fomferra" ^
    -outdir dist ^
@@ -17,7 +17,7 @@
    -srcfiles LICENSE.md ^
    -srcfiles build\limo.jar ^
    -appclass com.forman.limo.Main ^
-   -BappVersion=0.1 ^
+   -BappVersion=0.5 ^
    "-Bruntime=C:\Program Files\Java\jre1.8.0_144" ^
    -Bicon=src\com\forman\limo\resources\limo.ico ^
    -Bidentifier=com.forman.limo

@@ -44,10 +44,13 @@ public class CopyAndRenameDialog {
 
 
     public static void show(Stage window, Project project) {
-
-        assert project.projectFile.get() != null;
-        Path projectFile = Paths.get(project.projectFile.get());
-        Path projectDir = projectFile.getParent();
+        final Path projectDir;
+        if ( project.projectFile.get() != null) {
+            Path projectFile = Paths.get(project.projectFile.get());
+            projectDir = projectFile.getParent();
+        } else {
+            projectDir = null;
+        }
 
         TextField targetDirectoryTextField = new TextField();
         Button imageTargetDirectoryButton = new Button("...");
@@ -78,6 +81,10 @@ public class CopyAndRenameDialog {
         settingsPane.add(targetFileNamePatternTextField, 1, 2);
         settingsPane.add(indexLabel, 0, 3);
         settingsPane.add(targetStartIndexTextField, 1, 3);
+
+        Tooltip tooltip = new Tooltip(AppInfo.RES.getString("tooltip.pattern.formats"));
+        patternLabel.setTooltip(tooltip);
+        targetFileNamePatternTextField.setTooltip(tooltip);
 
         GridPane.setColumnSpan(imageTargetDirectoryLabel, 2);
         GridPane.setColumnSpan(imageTargetDirectoryPane, 2);
@@ -120,7 +127,7 @@ public class CopyAndRenameDialog {
 
                     CopyAndRenameImagesService copyAndRenameImagesService = new CopyAndRenameImagesService();
                     copyAndRenameImagesService.setFiles(project.imageFiles);
-                    copyAndRenameImagesService.setDirectory(projectDir.resolve(project.targetDirName.get()));
+                    copyAndRenameImagesService.setDirectory(projectDir != null ? projectDir.resolve(project.targetDirName.get()): Paths.get(project.targetDirName.get()));
                     copyAndRenameImagesService.setPattern(project.targetFileNamePattern.get());
                     copyAndRenameImagesService.setStartIndex(project.targetFileStartIndex.get());
                     copyAndRenameImagesService.setOnSucceeded(event1 -> dialog.close());
@@ -136,7 +143,7 @@ public class CopyAndRenameDialog {
 
     private static void showDirChooser(Stage window, Path projectDir, TextField textField) {
         String initialPath = textField.getText();
-        Path initialDir = projectDir.resolve(initialPath != null ? initialPath : "");
+        Path initialDir = projectDir != null ? projectDir.resolve(initialPath != null ? initialPath : "") : Paths.get(initialPath != null ? initialPath : "").toAbsolutePath();
         DirectoryChooser dirChooser = new DirectoryChooser();
         dirChooser.setTitle(AppInfo.getWindowTitle(AppInfo.RES.getString("select.target.directory")));
         File initialDir1 = new File(initialDir.toString());
@@ -149,7 +156,11 @@ public class CopyAndRenameDialog {
         File file = dirChooser.showDialog(window);
         Path targetPath = file != null ? file.toPath() : null;
         if (targetPath != null) {
-            textField.setText(projectDir.relativize(targetPath).toString());
+            if (projectDir != null) {
+                textField.setText(projectDir.relativize(targetPath).toString());
+            } else {
+                textField.setText(targetPath.toString());
+            }
         }
     }
 }

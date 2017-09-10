@@ -20,4 +20,14 @@ public class ImageItem {
         this.image = image;
         this.metadata = metadata;
     }
+
+    public String getMetadataTagValue(String catName, String tagName, String defaultValue) {
+        if (metadata != null) {
+            Map<String, String> catData = metadata.get(catName);
+            if (catData != null && catData.containsKey(tagName)) {
+                return catData.get(tagName);
+            }
+        }
+        return defaultValue;
+    }
 }

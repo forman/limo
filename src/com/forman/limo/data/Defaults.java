@@ -2,7 +2,7 @@ package com.forman.limo.data;
 
 public class Defaults {
     public static final String TARGET_DIR_NAME = "limo-export";
-    public static final String TARGET_FILE_NAME_PATTERN = "IMG%05d";
+    public static final String TARGET_FILE_NAME_PATTERN = "IMAG{000N}";
     public static final int TARGET_FILE_START_INDEX = 1;
     public static final boolean RELATIVIZE_PATHS = true;
     public static final boolean SCAN_RECURSIVE = false;

@@ -55,6 +55,11 @@ public class MetadataWindow extends Stage {
         public StringProperty tagValueProperty() {
             return tagValueProperty;
         }
+
+        @Override
+        public String toString() {
+            return String.format("[%s]-[%s] = [%s]", getCatName(), getTagName(), getTagValue());
+        }
     }
 
     public MetadataWindow(Stage owner) {
@@ -93,7 +98,9 @@ public class MetadataWindow extends Stage {
         for (String catName : data.keySet()) {
             Map<String, String> catData = data.get(catName);
             for (String tagName : catData.keySet()) {
-                itemList.add(new Item(catName, tagName, catData.get(tagName)));
+                Item item = new Item(catName, tagName, catData.get(tagName));
+                System.out.println("item = " + item);
+                itemList.add(item);
             }
         }
         itemList.sort((o1, o2) -> {

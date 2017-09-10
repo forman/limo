@@ -44,9 +44,15 @@ class ImageTile {
 
         Tooltip tooltip;
         if (image != null) {
-            // TODO: get real size
-            tooltip = new Tooltip(MessageFormat.format(AppInfo.RES.getString("0.x.1.pixels.n.2"),
-                    image.getWidth(), image.getHeight(),
+            String w = imageItem.getMetadataTagValue("JPEG", "Image Width",
+                    imageItem.getMetadataTagValue("Exif SubIFD", "Exif Image Width",
+                            imageItem.getMetadataTagValue("PNG-IHDR", "Image Width",
+                                    imageItem.getMetadataTagValue("GIF Header", "Image Width", "?"))));
+            String h = imageItem.getMetadataTagValue("JPEG", "Image Height",
+                    imageItem.getMetadataTagValue("Exif SubIFD", "Exif Image Height",
+                            imageItem.getMetadataTagValue("PNG-IHDR", "Image Height",
+                                    imageItem.getMetadataTagValue("GIF Header", "Image Height", "?"))));
+            tooltip = new Tooltip(MessageFormat.format(AppInfo.RES.getString("0.x.1.pixels.n.2"), w, h,
                     imageItem.file.getParent().toString()));
         } else {
             tooltip = new Tooltip(imageItem.file.getParent().toString());

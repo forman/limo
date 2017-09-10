@@ -152,147 +152,15 @@ public class Main extends Application {
         emptyPanel = new BorderPane(emptyPanelText);
         emptyPanel.setPadding(new Insets(DEFAULT_INSET_SIZE));
 
-        MenuItem openItem = new MenuItem(AppInfo.RES.getString("open"));
-        openItem.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
-        openItem.setOnAction(event -> openProject());
-
         BooleanBinding hasNoProject = Bindings.createBooleanBinding(() -> project.projectFile.get() == null, project.projectFile);
         BooleanBinding hasNoImageFiles = Bindings.createBooleanBinding(project.imageFiles::isEmpty, project.imageFiles);
         BooleanBinding hasNoSelectedImageFiles = Bindings.createBooleanBinding(project.selectedImageFiles::isEmpty, project.selectedImageFiles);
         BooleanBinding isNotModified = Bindings.createBooleanBinding(() -> !project.modified.get(), project.modified);
 
-        project.selectedImageFiles.addListener((InvalidationListener) observable -> {
-            if (metadataWindow != null) {
-                if (!project.selectedImageFiles.isEmpty()) {
-                    Path file = project.selectedImageFiles.get(0);
-                    ImageItem imageItem = project.imageItems.get(file);
-                    if (imageItem.metadata != null) {
-                        metadataWindow.setItems(imageItem.metadata);
-                        return;
-                    }
-                }
-                metadataWindow.clearItems();
-            }
-        });
-
-        project.modified.addListener(observable -> updateTitle());
-
-        MenuItem closeItem = new MenuItem(AppInfo.RES.getString("close"));
-        closeItem.disableProperty().bind(hasNoProject);
-        closeItem.setOnAction(event -> closeProject());
-
-        MenuItem saveItem = new MenuItem(AppInfo.RES.getString("save"));
-        saveItem.disableProperty().bind(hasNoImageFiles.or(isNotModified).or(hasNoProject));
-        saveItem.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
-        saveItem.setOnAction(event -> saveProject());
-
-        MenuItem saveAsItem = new MenuItem(AppInfo.RES.getString("save.as"));
-        //saveAsItem.disableProperty().bind(hasNoImageFiles);
-        saveAsItem.setOnAction(event -> saveProjectAs());
-
-        MenuItem settingsItem = new MenuItem(AppInfo.RES.getString("settings"));
-        settingsItem.setOnAction(event -> SettingsDialog.show(mainWindow, project, prefs));
-
-        MenuItem exitItem = new MenuItem(AppInfo.RES.getString("exit"));
-        exitItem.setOnAction(event -> exit());
-
-        Menu fileMenu = new Menu(AppInfo.RES.getString("file"));
-        fileMenu.getItems().addAll(
-                openItem,
-                closeItem,
-                new SeparatorMenuItem(),
-                saveItem,
-                saveAsItem,
-                new SeparatorMenuItem(),
-                settingsItem,
-                new SeparatorMenuItem(),
-                exitItem
-        );
-
-        BooleanBinding cannotUndo = Bindings.createBooleanBinding(() -> !undoList.canUndo(), undoList);
-        BooleanBinding cannotRedo = Bindings.createBooleanBinding(() -> !undoList.canRedo(), undoList);
-
-        MenuItem undoItem = new MenuItem(AppInfo.RES.getString("undo"));
-        undoItem.disableProperty().bind(cannotUndo);
-        undoItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Z"));
-        undoItem.setOnAction(event -> {
-            try {
-                undoList.undo();
-            } catch (Exception e) {
-                ExceptionDialog.show(mainWindow, AppInfo.RES.getString("failed.to.undo.last.actions"), e);
-            }
-        });
-
-        MenuItem redoItem = new MenuItem(AppInfo.RES.getString("redo"));
-        redoItem.disableProperty().bind(cannotRedo);
-        redoItem.setAccelerator(KeyCombination.keyCombination("Shift+Ctrl+Z"));
-        redoItem.setOnAction(event -> {
-            try {
-                undoList.redo();
-            } catch (Exception e) {
-                ExceptionDialog.show(mainWindow, AppInfo.RES.getString("failed.to.redo.last.actions"), e);
-            }
-        });
-
-        MenuItem deleteItem = new MenuItem(AppInfo.RES.getString("delete"));
-        deleteItem.disableProperty().bind(hasNoSelectedImageFiles);
-        deleteItem.setAccelerator(KeyCombination.keyCombination(AppInfo.RES.getString("delete")));
-        deleteItem.setOnAction(event -> runAction(new DeleteAction(project, project.selectedImageFiles)));
-
-        MenuItem selectAllItem = new MenuItem(AppInfo.RES.getString("select.all"));
-        selectAllItem.disableProperty().bind(hasNoImageFiles);
-        selectAllItem.setAccelerator(KeyCombination.keyCombination("Ctrl+A"));
-        selectAllItem.setOnAction(event -> project.selectedImageFiles.setAll(project.imageFiles));
-
-        Menu editMenu = new Menu(AppInfo.RES.getString("edit"));
-        editMenu.getItems().addAll(
-                undoItem,
-                redoItem,
-                new SeparatorMenuItem(),
-                deleteItem,
-                new SeparatorMenuItem(),
-                selectAllItem
-        );
-
-        MenuItem copyAndRenameItem = new MenuItem(AppInfo.RES.getString("copy.and.rename") + "...");
-        copyAndRenameItem.setAccelerator(KeyCombination.keyCombination("Ctrl+R"));
-        copyAndRenameItem.setOnAction(event -> CopyAndRenameDialog.show(mainWindow, project));
-        copyAndRenameItem.disableProperty().bind(hasNoProject);
-
-        MenuItem sortByFilenameItem = new MenuItem(AppInfo.RES.getString("sort.by.filename"));
-        sortByFilenameItem.disableProperty().bind(hasNoImageFiles);
-        sortByFilenameItem.setOnAction(event -> runAction(new SortyByAction(project, SortyByAction.FILENAME)));
-
-        MenuItem sortByDateTimeItem = new MenuItem(AppInfo.RES.getString("sort.by.date.time"));
-        sortByDateTimeItem.disableProperty().bind(hasNoImageFiles);
-        sortByDateTimeItem.setOnAction(event -> runAction(new SortyByAction(project, SortyByAction.DATE_TIME_ORIGINAL)));
-
-        MenuItem showExifItem = new MenuItem(AppInfo.RES.getString("show.exif.metadata"));
-        // showExifItem.disableProperty().bind(hasNoImageFiles);
-        showExifItem.setOnAction(event -> showExifWindow());
-
-        Menu toolsMenu = new Menu(AppInfo.RES.getString("tools"));
-        toolsMenu.getItems().addAll(
-                copyAndRenameItem,
-                new SeparatorMenuItem(),
-                sortByFilenameItem,
-                sortByDateTimeItem,
-                new SeparatorMenuItem(),
-                showExifItem
-        );
-
-        MenuItem keymapItem = new MenuItem(AppInfo.RES.getString("keymap.reference") + "...");
-        keymapItem.setOnAction(event -> KeymapReferenceDialog.show(mainWindow));
-
-        MenuItem aboutItem = new MenuItem(AppInfo.RES.getString("about") + "...");
-        aboutItem.setOnAction(event -> AboutDialog.show(mainWindow));
-
-        Menu helpMenu = new Menu(AppInfo.RES.getString("help"));
-        helpMenu.getItems().addAll(
-                keymapItem,
-                new SeparatorMenuItem(),
-                aboutItem
-        );
+        Menu fileMenu = getFileMenu(hasNoProject, hasNoImageFiles, isNotModified);
+        Menu editMenu = getEditMenu(hasNoImageFiles, hasNoSelectedImageFiles);
+        Menu toolsMenu = getToolsMenu(hasNoImageFiles);
+        Menu helpMenu = getHelpMenu();
 
         MenuBar menuBar = new MenuBar();
         menuBar.getMenus().addAll(fileMenu, editMenu, toolsMenu, helpMenu);
@@ -303,7 +171,8 @@ public class Main extends Application {
         rootPanel.setCenter(emptyPanel);
 
         Scene scene = new Scene(this.rootPanel, 480, 520);
-        scene.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
+        //scene.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
+        imagePanel.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
         scene.setOnDragOver(event -> {
             if (event.getGestureSource() != scene && event.getDragboard().hasFiles()) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -337,6 +206,23 @@ public class Main extends Application {
         prefs.maxImageDisplaySize.addListener(imageDisplaySizeListener);
         project.projectFile.addListener((observable, oldValue, newValue) -> handleProjectFileChange());
 
+        project.selectedImageFiles.addListener((InvalidationListener) observable -> {
+            if (metadataWindow != null) {
+                if (!project.selectedImageFiles.isEmpty()) {
+                    Path file = project.selectedImageFiles.get(0);
+                    ImageItem imageItem = project.imageItems.get(file);
+                    if (imageItem.metadata != null) {
+                        metadataWindow.setItems(imageItem.metadata);
+                        return;
+                    }
+                }
+                metadataWindow.clearItems();
+            }
+        });
+
+        project.modified.addListener(observable -> updateTitle());
+
+
         mainWindow.getIcons().addAll(IntStream
                                              .of(16, 24, 32, 48, 64, 128, 210, 256)
                                              .mapToObj(value -> new Image(String.format("com/forman/limo/resources/limo-%d.png", value)))
@@ -356,6 +242,139 @@ public class Main extends Application {
         if (lastProjectFile != null && prefs.openLastProject.get() && new File(lastProjectFile).isFile()) {
             openProject(new File(lastProjectFile));
         }
+    }
+
+    private Menu getFileMenu(BooleanBinding hasNoProject,BooleanBinding hasNoImageFiles, BooleanBinding isNotModified) {
+        MenuItem openItem = new MenuItem(AppInfo.RES.getString("open"));
+        openItem.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
+        openItem.setOnAction(event -> openProject());
+
+        MenuItem closeItem = new MenuItem(AppInfo.RES.getString("close"));
+        closeItem.disableProperty().bind(hasNoProject);
+        closeItem.setOnAction(event -> closeProject());
+
+        MenuItem saveItem = new MenuItem(AppInfo.RES.getString("save"));
+        saveItem.disableProperty().bind(hasNoImageFiles.or(isNotModified).or(hasNoProject));
+        saveItem.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
+        saveItem.setOnAction(event -> saveProject());
+
+        MenuItem saveAsItem = new MenuItem(AppInfo.RES.getString("save.as"));
+        //saveAsItem.disableProperty().bind(hasNoImageFiles);
+        saveAsItem.setOnAction(event -> saveProjectAs());
+
+        MenuItem settingsItem = new MenuItem(AppInfo.RES.getString("settings"));
+        settingsItem.setOnAction(event -> SettingsDialog.show(mainWindow, project, prefs));
+
+        MenuItem exitItem = new MenuItem(AppInfo.RES.getString("exit"));
+        exitItem.setOnAction(event -> exit());
+
+        Menu fileMenu = new Menu(AppInfo.RES.getString("file"));
+        fileMenu.getItems().addAll(
+                openItem,
+                closeItem,
+                new SeparatorMenuItem(),
+                saveItem,
+                saveAsItem,
+                new SeparatorMenuItem(),
+                settingsItem,
+                new SeparatorMenuItem(),
+                exitItem
+        );
+        return fileMenu;
+    }
+
+    private Menu getEditMenu(BooleanBinding hasNoImageFiles, BooleanBinding hasNoSelectedImageFiles) {
+        BooleanBinding cannotUndo = Bindings.createBooleanBinding(() -> !undoList.canUndo(), undoList);
+        BooleanBinding cannotRedo = Bindings.createBooleanBinding(() -> !undoList.canRedo(), undoList);
+
+        MenuItem undoItem = new MenuItem(AppInfo.RES.getString("undo"));
+        undoItem.disableProperty().bind(cannotUndo);
+        undoItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Z"));
+        undoItem.setOnAction(event -> {
+            try {
+                undoList.undo();
+            } catch (Exception e) {
+                ExceptionDialog.show(mainWindow, AppInfo.RES.getString("failed.to.undo.last.actions"), e);
+            }
+        });
+
+        MenuItem redoItem = new MenuItem(AppInfo.RES.getString("redo"));
+        redoItem.disableProperty().bind(cannotRedo);
+        redoItem.setAccelerator(KeyCombination.keyCombination("Shift+Ctrl+Z"));
+        redoItem.setOnAction(event -> {
+            try {
+                undoList.redo();
+            } catch (Exception e) {
+                ExceptionDialog.show(mainWindow, AppInfo.RES.getString("failed.to.redo.last.actions"), e);
+            }
+        });
+
+        MenuItem deleteItem = new MenuItem(AppInfo.RES.getString("delete"));
+        deleteItem.disableProperty().bind(hasNoSelectedImageFiles);
+        deleteItem.setAccelerator(new KeyCodeCombination(KeyCode.DELETE));
+        deleteItem.setOnAction(event -> runAction(new DeleteAction(project, project.selectedImageFiles)));
+
+        MenuItem selectAllItem = new MenuItem(AppInfo.RES.getString("select.all"));
+        selectAllItem.disableProperty().bind(hasNoImageFiles);
+        selectAllItem.setAccelerator(KeyCombination.keyCombination("Ctrl+A"));
+        selectAllItem.setOnAction(event -> project.selectedImageFiles.setAll(project.imageFiles));
+
+        Menu editMenu = new Menu(AppInfo.RES.getString("edit"));
+        editMenu.getItems().addAll(
+                undoItem,
+                redoItem,
+                new SeparatorMenuItem(),
+                deleteItem,
+                new SeparatorMenuItem(),
+                selectAllItem
+        );
+        return editMenu;
+    }
+
+    private Menu getToolsMenu(BooleanBinding hasNoImageFiles) {
+        MenuItem copyAndRenameItem = new MenuItem(AppInfo.RES.getString("copy.and.rename") + "...");
+        copyAndRenameItem.setAccelerator(KeyCombination.keyCombination("Ctrl+R"));
+        copyAndRenameItem.setOnAction(event -> CopyAndRenameDialog.show(mainWindow, project));
+        copyAndRenameItem.disableProperty().bind(hasNoImageFiles);
+
+        MenuItem sortByFilenameItem = new MenuItem(AppInfo.RES.getString("sort.by.filename"));
+        sortByFilenameItem.disableProperty().bind(hasNoImageFiles);
+        sortByFilenameItem.setOnAction(event -> runAction(new SortyByAction(project, SortyByAction.FILENAME)));
+
+        MenuItem sortByDateTimeItem = new MenuItem(AppInfo.RES.getString("sort.by.date.time"));
+        sortByDateTimeItem.disableProperty().bind(hasNoImageFiles);
+        sortByDateTimeItem.setOnAction(event -> runAction(new SortyByAction(project, SortyByAction.DATE_TIME_ORIGINAL)));
+
+        MenuItem showExifItem = new MenuItem(AppInfo.RES.getString("show.exif.metadata"));
+        // showExifItem.disableProperty().bind(hasNoImageFiles);
+        showExifItem.setOnAction(event -> showExifWindow());
+
+        Menu toolsMenu = new Menu(AppInfo.RES.getString("tools"));
+        toolsMenu.getItems().addAll(
+                copyAndRenameItem,
+                new SeparatorMenuItem(),
+                sortByFilenameItem,
+                sortByDateTimeItem,
+                new SeparatorMenuItem(),
+                showExifItem
+        );
+        return toolsMenu;
+    }
+
+    private Menu getHelpMenu() {
+        MenuItem keymapItem = new MenuItem(AppInfo.RES.getString("keymap.reference") + "...");
+        keymapItem.setOnAction(event -> KeymapReferenceDialog.show(mainWindow));
+
+        MenuItem aboutItem = new MenuItem(AppInfo.RES.getString("about") + "...");
+        aboutItem.setOnAction(event -> AboutDialog.show(mainWindow));
+
+        Menu helpMenu = new Menu(AppInfo.RES.getString("help"));
+        helpMenu.getItems().addAll(
+                keymapItem,
+                new SeparatorMenuItem(),
+                aboutItem
+        );
+        return helpMenu;
     }
 
     private void showExifWindow() {
@@ -484,6 +503,8 @@ public class Main extends Application {
                 setImageFilesSelected(change.getAddedSubList(), true);
             }
         }
+
+        updateInfoLabel();
     }
 
     private void setImageFilesSelected(List<? extends Path> imageFiles, boolean selected) {
@@ -805,12 +826,13 @@ public class Main extends Application {
 
     private void updateInfoLabel() {
         int imageCount = project.imageFiles.size();
+        int selectedImageCount = project.selectedImageFiles.size();
         if (imageCount == 0) {
-            infoLabel.setText(AppInfo.RES.getString("no.images"));
+            infoLabel.setText(AppInfo.RES.getString("status.no.images"));
         } else if (imageCount == 1) {
-            infoLabel.setText(AppInfo.RES.getString("1.image"));
+            infoLabel.setText(MessageFormat.format(AppInfo.RES.getString("status.one.image"), selectedImageCount));
         } else {
-            infoLabel.setText(MessageFormat.format(AppInfo.RES.getString("n.images"), imageCount));
+            infoLabel.setText(MessageFormat.format(AppInfo.RES.getString("status.n.images"), imageCount, selectedImageCount));
         }
     }
 
