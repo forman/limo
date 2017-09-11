@@ -19,6 +19,15 @@ public class CopyAndRenameImagesService extends Service<Void> {
     private String pattern;
     private int startIndex;
 
+    public static Map<String, String> getReplacements(String nameReplacement, String formatReplacement, Map<String, String> replacements) {
+        if (replacements == null) {
+            replacements = new HashMap<>();
+        }
+        replacements.put("{NAME}", nameReplacement);
+        replacements.put("{FORMAT}", formatReplacement);
+        return replacements;
+    }
+
     public void setFiles(List<Path> files) {
         this.files = files;
     }
@@ -56,7 +65,6 @@ class CopyAndRenameImagesTask extends Task<Void> {
 
     @Override
     protected Void call() throws Exception {
-        // TODO - check if files exist
         updateProgress(0, files.length);
         Files.createDirectories(directory);
         Map<String, String> replacements  = new HashMap<>();
@@ -70,11 +78,9 @@ class CopyAndRenameImagesTask extends Task<Void> {
             int extIndex = sourceFileName.lastIndexOf('.');
             if (extIndex > 0) {
                 sourceFileNameExt = sourceFileName.substring(extIndex);
-                replacements.put("{NAME}", sourceFileName.substring(0, extIndex));
-                replacements.put("{FORMAT}", sourceFileNameExt.substring(1).toUpperCase());
+                CopyAndRenameImagesService.getReplacements(sourceFileName.substring(0, extIndex), sourceFileNameExt.substring(1).toUpperCase(), replacements);
             } else {
-                replacements.put("{NAME}", sourceFileName);
-                replacements.put("{FORMAT}", "");
+                CopyAndRenameImagesService.getReplacements(sourceFileName, "", replacements);
             }
 
             String targetFileName = StringReplacer.replace(pattern, startIndex + i, replacements) + sourceFileNameExt;
@@ -96,4 +102,5 @@ class CopyAndRenameImagesTask extends Task<Void> {
         updateMessage(MessageFormat.format("{0} file(s) copied", files.length));
         return null;
     }
+
 }

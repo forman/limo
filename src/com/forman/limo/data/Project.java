@@ -1,8 +1,8 @@
 package com.forman.limo.data;
 
+import com.forman.limo.AppInfo;
 import com.sun.javafx.collections.ObservableListWrapper;
 import com.sun.javafx.collections.ObservableMapWrapper;
-import com.forman.limo.AppInfo;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -33,7 +33,7 @@ public class Project {
     public final StringProperty targetFileNamePattern;
     public final IntegerProperty targetFileStartIndex;
     public final BooleanProperty relativizePaths;
-    public final StringProperty imageFileNameExt;
+    public final StringProperty imageFilenameExt;
     public final BooleanProperty scanRecursive;
     public final DoubleProperty imageDisplaySizeRatio;
     public final ListProperty<Path> selectedImageFiles;
@@ -51,7 +51,7 @@ public class Project {
         targetFileNamePattern = new SimpleStringProperty();
         targetFileStartIndex = new SimpleIntegerProperty();
         relativizePaths = new SimpleBooleanProperty();
-        imageFileNameExt = new SimpleStringProperty();
+        imageFilenameExt = new SimpleStringProperty();
         scanRecursive = new SimpleBooleanProperty();
         imageDisplaySizeRatio = new SimpleDoubleProperty();
         selectedImageFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
@@ -65,7 +65,7 @@ public class Project {
         targetFileNamePattern.addListener(invalidationListener);
         targetFileStartIndex.addListener(invalidationListener);
         relativizePaths.addListener(invalidationListener);
-        imageFileNameExt.addListener(invalidationListener);
+        imageFilenameExt.addListener(invalidationListener);
         scanRecursive.addListener(invalidationListener);
         imageDisplaySizeRatio.addListener(invalidationListener);
         //selectedImageFiles.addListener(invalidationListener);
@@ -87,7 +87,7 @@ public class Project {
         targetFileNamePattern.set(TARGET_FILE_NAME_PATTERN);
         targetFileStartIndex.set(TARGET_FILE_START_INDEX);
         relativizePaths.set(RELATIVIZE_PATHS);
-        imageFileNameExt.set(IMAGE_FILE_NAME_EXT);
+        imageFilenameExt.set(IMAGE_FILE_NAME_EXT);
         scanRecursive.set(SCAN_RECURSIVE);
         imageDisplaySizeRatio.set(IMAGE_DISPLAY_SIZE_RATIO);
         selectedImageFiles.clear();
@@ -98,7 +98,7 @@ public class Project {
         targetFileNamePattern.set(preferences.get("targetFileNamePattern", targetFileNamePattern.get()));
         targetFileStartIndex.set(preferences.getInt("targetFileStartIndex", targetFileStartIndex.get()));
         relativizePaths.set(preferences.getBoolean("relativizePaths", relativizePaths.get()));
-        imageFileNameExt.set(preferences.get("imageFileNameExt", imageFileNameExt.get()));
+        imageFilenameExt.set(preferences.get("imageFilenameExt", imageFilenameExt.get()));
         scanRecursive.set(preferences.getBoolean("scanRecursive", scanRecursive.get()));
         imageDisplaySizeRatio.set(preferences.getDouble("imageDisplaySizeRatio", imageDisplaySizeRatio.get()));
     }
@@ -108,7 +108,7 @@ public class Project {
         preferences.put("targetFileNamePattern", targetFileNamePattern.get());
         preferences.putInt("targetFileStartIndex", targetFileStartIndex.get());
         preferences.putBoolean("relativizePaths", relativizePaths.get());
-        preferences.put("imageFileNameExt", imageFileNameExt.get());
+        preferences.put("imageFilenameExt", imageFilenameExt.get());
         preferences.putBoolean("scanRecursive", scanRecursive.get());
         preferences.putDouble("imageDisplaySizeRatio", imageDisplaySizeRatio.get());
     }
@@ -155,7 +155,7 @@ public class Project {
         Properties properties = new Properties();
         properties.put("version", VERSION + "");
         getSettings(new Settings(properties));
-        String comments = AppInfo.NAME + " " + AppInfo.VERSION + " project file";
+        String comments = AppInfo.NAME + " " + AppInfo.VERSION + " album file";
         properties.store(zout, comments);
         zout.closeEntry();
     }
@@ -214,12 +214,19 @@ public class Project {
     }
 
     public List<Path> filterFiles(List<File> files) {
-        String[] extensions = imageFileNameExt.get().split(",");
-        HashSet<String> extSet = new HashSet<>(Arrays.stream(extensions).map(String::trim).map(String::toLowerCase).collect(Collectors.toList()));
+        Set<String> extSet = getFilenameExtensions(imageFilenameExt.get());
         boolean scanRecursive = this.scanRecursive.get();
         ArrayList<Path> filteredFiles = new ArrayList<>();
         collectFilteredFiles(files, extSet, scanRecursive, filteredFiles);
         return filteredFiles;
+    }
+
+    public static Set<String> getFilenameExtensions(String s) {
+        if (s.trim().isEmpty()) {
+            return new HashSet<>();
+        }
+        String[] extensions = s.split(",");
+        return new HashSet<>(Arrays.stream(extensions).map(String::trim).map(String::toLowerCase).collect(Collectors.toList()));
     }
 
     private void collectFilteredFiles(List<File> files, Set<String> extSet, boolean scanRecursive, List<Path> filteredFiles) {

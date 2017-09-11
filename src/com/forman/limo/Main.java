@@ -4,11 +4,11 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 import com.forman.limo.actions.*;
+import com.forman.limo.data.ImageItem;
 import com.forman.limo.data.Prefs;
 import com.forman.limo.data.Project;
 import com.forman.limo.dialogs.*;
 import com.sun.javafx.geom.Rectangle;
-import com.forman.limo.data.ImageItem;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -20,15 +20,12 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.geometry.*;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
@@ -45,7 +42,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.prefs.BackingStoreException;
@@ -224,9 +220,9 @@ public class Main extends Application {
 
 
         mainWindow.getIcons().addAll(IntStream
-                                             .of(16, 24, 32, 48, 64, 128, 210, 256)
-                                             .mapToObj(value -> new Image(String.format("com/forman/limo/resources/limo-%d.png", value)))
-                                             .toArray(Image[]::new));
+                .of(16, 24, 32, 48, 64, 128, 210, 256)
+                .mapToObj(value -> new Image(String.format("com/forman/limo/resources/limo-%d.png", value)))
+                .toArray(Image[]::new));
         mainWindow.setScene(scene);
         restoreWindowBounds(this.mainWindow, prefs.getMainWindowBounds());
         mainWindow.show();
@@ -244,7 +240,7 @@ public class Main extends Application {
         }
     }
 
-    private Menu getFileMenu(BooleanBinding hasNoProject,BooleanBinding hasNoImageFiles, BooleanBinding isNotModified) {
+    private Menu getFileMenu(BooleanBinding hasNoProject, BooleanBinding hasNoImageFiles, BooleanBinding isNotModified) {
         MenuItem openItem = new MenuItem(AppInfo.RES.getString("open"));
         openItem.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
         openItem.setOnAction(event -> openProject());
@@ -440,51 +436,54 @@ public class Main extends Application {
                 new ImageLoaderTask.Listener() {
                     @Override
                     public void onImageLoaded(Path file, Image image, Metadata metadata) {
-                        HashMap<String, Map<String,String>> metadataDict = new HashMap<>();
-                        Iterable<Directory> directories = metadata.getDirectories();
-                        for (Directory directory : directories) {
-                            Map<String,String> catData = new HashMap<>();
-                            metadataDict.put(directory.getName(), catData);
-                            for (Tag tag : directory.getTags()) {
-                                String tagName = tag.getTagName();
-                                Object tagValue = directory.getObject(tag.getTagType());
-                                //System.out.printf("  %s = %s (%s)%n", tagName, tagValue, tagValue.getClass());
-                                String tagTextValue = "";
-                                if (tagValue != null && tagValue.getClass().isArray()) {
-                                    if (tagValue instanceof byte[]) {
-                                        tagTextValue = Arrays.toString((byte[]) tagValue);
-                                    } else if (tagValue instanceof char[]) {
-                                        tagTextValue = Arrays.toString((char[]) tagValue);
-                                    } else if (tagValue instanceof boolean[]) {
-                                        tagTextValue = Arrays.toString((boolean[]) tagValue);
-                                    } else if (tagValue instanceof short[]) {
-                                        tagTextValue = Arrays.toString((short[]) tagValue);
-                                    } else if (tagValue instanceof int[]) {
-                                        tagTextValue = Arrays.toString((int[]) tagValue);
-                                    } else if (tagValue instanceof long[]) {
-                                        tagTextValue = Arrays.toString((long[]) tagValue);
-                                    } else if (tagValue instanceof float[]) {
-                                        tagTextValue = Arrays.toString((float[]) tagValue);
-                                    } else if (tagValue instanceof double[]) {
-                                        tagTextValue = Arrays.toString((double[]) tagValue);
-                                    } else if (tagValue instanceof Object[]) {
-                                        tagTextValue = Arrays.deepToString((Object[]) tagValue);
-                                    }
-                                } else if (tagValue != null) {
-                                    tagTextValue = tagValue.toString();
-                                }
-                                catData.put(tagName, tagTextValue);
-                            }
-                        }
-
-                        project.imageItems.replace(file, new ImageItem(file, image, metadataDict));
+                        project.imageItems.replace(file, new ImageItem(file, image, convertMetadata(metadata)));
                     }
 
                     @Override
                     public void onImageLoadFailed(Path file, Exception e) {
-                        // TODO: display error message in image tile
+                        // Note, could be used to display error message in image tile
                     }
                 }));
+    }
+
+    private static Map<String, Map<String, String>> convertMetadata(Metadata metadata) {
+        HashMap<String, Map<String, String>> metadataDict = new HashMap<>();
+        Iterable<Directory> directories = metadata.getDirectories();
+        for (Directory directory : directories) {
+            Map<String, String> catData = new HashMap<>();
+            metadataDict.put(directory.getName(), catData);
+            for (Tag tag : directory.getTags()) {
+                String tagName = tag.getTagName();
+                Object tagValue = directory.getObject(tag.getTagType());
+                //System.out.printf("  %s = %s (%s)%n", tagName, tagValue, tagValue.getClass());
+                String tagTextValue = "";
+                if (tagValue != null && tagValue.getClass().isArray()) {
+                    if (tagValue instanceof byte[]) {
+                        tagTextValue = Arrays.toString((byte[]) tagValue);
+                    } else if (tagValue instanceof char[]) {
+                        tagTextValue = Arrays.toString((char[]) tagValue);
+                    } else if (tagValue instanceof boolean[]) {
+                        tagTextValue = Arrays.toString((boolean[]) tagValue);
+                    } else if (tagValue instanceof short[]) {
+                        tagTextValue = Arrays.toString((short[]) tagValue);
+                    } else if (tagValue instanceof int[]) {
+                        tagTextValue = Arrays.toString((int[]) tagValue);
+                    } else if (tagValue instanceof long[]) {
+                        tagTextValue = Arrays.toString((long[]) tagValue);
+                    } else if (tagValue instanceof float[]) {
+                        tagTextValue = Arrays.toString((float[]) tagValue);
+                    } else if (tagValue instanceof double[]) {
+                        tagTextValue = Arrays.toString((double[]) tagValue);
+                    } else if (tagValue instanceof Object[]) {
+                        tagTextValue = Arrays.deepToString((Object[]) tagValue);
+                    }
+                } else if (tagValue != null) {
+                    tagTextValue = tagValue.toString();
+                }
+                catData.put(tagName, tagTextValue);
+            }
+        }
+        return metadataDict;
     }
 
     private void handleImageDisplaySizeChange() {
@@ -559,9 +558,9 @@ public class Main extends Application {
         } catch (IOException e) {
             project.init();
             ErrorDialog.show(mainWindow, AppInfo.RES.getString("opening.project.failed"),
-                             MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.opening.project.from.file.n.0.n.1"),
-                                                  project.projectFile.get(),
-                                                  e.getMessage()));
+                    MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.opening.project.from.file.n.0.n.1"),
+                            project.projectFile.get(),
+                            e.getMessage()));
         }
     }
 
@@ -597,9 +596,9 @@ public class Main extends Application {
             return true;
         } catch (IOException e) {
             ErrorDialog.show(mainWindow, AppInfo.RES.getString("saving.project.failed"),
-                             MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.saving.project.to.file.n.0.n.1"),
-                                                  project.projectFile.get(),
-                                                  e.getMessage()));
+                    MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.saving.project.to.file.n.0.n.1"),
+                            project.projectFile.get(),
+                            e.getMessage()));
             return false;
         }
     }
@@ -616,9 +615,9 @@ public class Main extends Application {
             return true;
         } catch (IOException e) {
             ErrorDialog.show(mainWindow, AppInfo.RES.getString("saving.project.failed"),
-                             MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.saving.project.to.file.n.0.n.1"),
-                                                  project.projectFile.get(),
-                                                  e.getMessage()));
+                    MessageFormat.format(AppInfo.RES.getString("an.error.occurred.while.saving.project.to.file.n.0.n.1"),
+                            project.projectFile.get(),
+                            e.getMessage()));
             return false;
         }
     }
@@ -748,9 +747,9 @@ public class Main extends Application {
             imageTileListener = new ImageTileListener();
         }
         return new ImageTile(imageItem,
-                             computeImageFitWidth(),
-                             selected,
-                             imageTileListener);
+                computeImageFitWidth(),
+                selected,
+                imageTileListener);
     }
 
     private void openExternal(Path file) {

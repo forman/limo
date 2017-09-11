@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class StringReplacer {
-    static String REGEX = "(\\{[^}]+\\})";
-    static Pattern PATTERN = Pattern.compile(REGEX);
-    static Map<String, Integer> INDEX_NAMES = new HashMap<String, Integer>() {{
-        for (int i = 1; i < 100; i++) {
+public class StringReplacer {
+    private static String REGEX = "(\\{[^}]+\\})";
+    private static Pattern PATTERN = Pattern.compile(REGEX);
+    private static Map<String, Integer> INDEX_NAMES = new HashMap<String, Integer>() {{
+        for (int i = 1; i <= 100; i++) {
             put(String.format("{%0" + i + "dN}", 0), i + 1);
         }
     }};
@@ -19,7 +19,6 @@ class StringReplacer {
         Matcher m = PATTERN.matcher(pattern);
         while (m.find()) {
             String group = m.group(1);
-            //System.out.println("group = " + group);
             if (group != null) {
                 String replacement = null;
                 if (group.equalsIgnoreCase("{N}")) {

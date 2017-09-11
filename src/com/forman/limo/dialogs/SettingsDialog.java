@@ -28,20 +28,27 @@ package com.forman.limo.dialogs;
 import com.forman.limo.AppInfo;
 import com.forman.limo.data.Prefs;
 import com.forman.limo.data.Project;
+import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
+import java.text.MessageFormat;
+import java.util.Set;
+
 public class SettingsDialog {
+
+    public static final int MIN_DISPLAY_SIZE = 16;
+    public static final int MAX_DISPLAY_SIZE = 512;
 
     public static void show(Stage window, Project project, Prefs preferences) {
 
         // Project
 
-        TextField imageFileNameExtTextField = new TextField();
-        imageFileNameExtTextField.setText(project.imageFileNameExt.getValue());
+        TextField imageFilenameExtTextField = new TextField();
+        imageFilenameExtTextField.setText(project.imageFilenameExt.getValue());
 
         CheckBox scanRecursiveCheckBox = new CheckBox(AppInfo.RES.getString("also.scan.subdirectories"));
         scanRecursiveCheckBox.setSelected(project.scanRecursive.get());
@@ -55,7 +62,7 @@ public class SettingsDialog {
         projectPanel.setVgap(3);
 
         projectPanel.add(new Label(AppInfo.RES.getString("image.file.extensions")), 0, 0);
-        projectPanel.add(imageFileNameExtTextField, 1, 0);
+        projectPanel.add(imageFilenameExtTextField, 1, 0);
         projectPanel.add(scanRecursiveCheckBox, 0, 1);
         projectPanel.add(relativizePathsCheckBox, 0, 2);
 
@@ -110,24 +117,77 @@ public class SettingsDialog {
         dialog.getDialogPane().setContent(tabPane);
         dialog.getDialogPane().getButtonTypes().add(okButtonType);
         dialog.getDialogPane().getButtonTypes().add(cancelButtonType);
-        dialog.showAndWait().ifPresent(response -> {
-            if (response == okButtonType) {
-                // TODO: validate dialog inputs
 
-                // Project
-                project.imageFileNameExt.set(imageFileNameExtTextField.getText());
-                project.scanRecursive.set(scanRecursiveCheckBox.isSelected());
-                project.relativizePaths.set(relativizePathsCheckBox.isSelected());
+        final Button applyButton = (Button) dialog.getDialogPane().lookupButton(okButtonType);
+        applyButton.addEventFilter(ActionEvent.ACTION, event -> {
 
-                // Prefs
-                preferences.openLastProject.set(openLastProjectCheckBox.isSelected());
-                preferences.minImageDisplaySize.set(Integer.parseInt(minImageDisplaySizeTextField.getText()));
-                preferences.maxImageDisplaySize.set(Integer.parseInt(maxImageDisplaySizeTextField.getText()));
+            ////////////////////////////////////////////////
+            // Validate Project
+
+            String imageFileNameExtText = imageFilenameExtTextField.getText();
+            Set<String> filenameExtensions = Project.getFilenameExtensions(imageFileNameExtText);
+            if (filenameExtensions.isEmpty()) {
+                error(AppInfo.RES.getString("at.least.a.single.filename.extension.must.be.given"));
+                event.consume();
+                return;
             }
-        });
 
+            ////////////////////////////////////////////////
+            // Validate Prefs
+
+            String minImageDisplaySizeText = minImageDisplaySizeTextField.getText();
+            int minImageDisplaySize;
+            try {
+                minImageDisplaySize = Integer.parseInt(minImageDisplaySizeText);
+            } catch (NumberFormatException e) {
+                minImageDisplaySize = -1;
+            }
+            if (minImageDisplaySize < MIN_DISPLAY_SIZE || minImageDisplaySize > MAX_DISPLAY_SIZE) {
+                error(MessageFormat.format(AppInfo.RES.getString("minimum.display.size.must.be.0.and.1"),
+                        MIN_DISPLAY_SIZE, MAX_DISPLAY_SIZE));
+                event.consume();
+                return;
+            }
+
+            String maxImageDisplaySizeText = maxImageDisplaySizeTextField.getText();
+            int maxImageDisplaySize;
+            try {
+                maxImageDisplaySize = Integer.parseInt(maxImageDisplaySizeText);
+            } catch (NumberFormatException e) {
+                maxImageDisplaySize = -1;
+            }
+            if (maxImageDisplaySize < MIN_DISPLAY_SIZE || maxImageDisplaySize > MAX_DISPLAY_SIZE) {
+                error(MessageFormat.format(AppInfo.RES.getString("maximum.display.size.must.be.0.and.1"),
+                        MIN_DISPLAY_SIZE, MAX_DISPLAY_SIZE));
+                event.consume();
+                return;
+            }
+
+            if (minImageDisplaySize > maxImageDisplaySize) {
+                error(AppInfo.RES.getString("minimum.display.size.must.be.less.than.maximum"));
+                event.consume();
+                return;
+            }
+
+            ////////////////////////////////////////////////
+            // Apply Project
+            project.imageFilenameExt.set(imageFileNameExtText);
+            project.scanRecursive.set(scanRecursiveCheckBox.isSelected());
+            project.relativizePaths.set(relativizePathsCheckBox.isSelected());
+
+            ////////////////////////////////////////////////
+            // Apply Prefs
+            preferences.openLastProject.set(openLastProjectCheckBox.isSelected());
+            preferences.minImageDisplaySize.set(minImageDisplaySize);
+            preferences.maxImageDisplaySize.set(maxImageDisplaySize);
+        });
+        dialog.show();
     }
 
+    static void error(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(AppInfo.getWindowTitle(AppInfo.RES.getString("settings1")));
+        alert.setHeaderText(message);
+        alert.show();
+    }
 }
-
-
