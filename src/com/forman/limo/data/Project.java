@@ -215,7 +215,7 @@ public class Project {
 
     public List<Path> filterFiles(List<File> files) {
         String[] extensions = imageFileNameExt.get().split(",");
-        HashSet<String> extSet = new HashSet<>(Arrays.stream(extensions).map(String::trim).collect(Collectors.toList()));
+        HashSet<String> extSet = new HashSet<>(Arrays.stream(extensions).map(String::trim).map(String::toLowerCase).collect(Collectors.toList()));
         boolean scanRecursive = this.scanRecursive.get();
         ArrayList<Path> filteredFiles = new ArrayList<>();
         collectFilteredFiles(files, extSet, scanRecursive, filteredFiles);
@@ -228,7 +228,7 @@ public class Project {
                 String name = file.getName();
                 int pos = name.lastIndexOf('.');
                 if (pos > 0) {
-                    String ext = name.substring(pos + 1);
+                    String ext = name.substring(pos + 1).toLowerCase();
                     if (extSet.contains(ext) && file.isFile()) {
                         filteredFiles.add(file.toPath());
                     }
