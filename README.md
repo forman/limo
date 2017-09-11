@@ -11,7 +11,7 @@ Limo is a simple tool allowing you to
 This way, albums of images are created where images stay in order in any file system through the use of sortable, 
 unified filenames.
 
-Scenario:
+## Scenario
 
 * Drag & drop photos from various sources into Limo window
 * Click *Sort by Date/Time* of exposure (Tools menu)
@@ -20,3 +20,13 @@ Scenario:
 * Save as new album
 * Click *Copy and Rename* (from Tools menu), select filename pattern, e.g. `IMAG_{000N}_{NAME}`
 
+## License
+
+Limo is distributed under the [MIT](https://opensource.org/licenses/MIT) license.
+
+## Thanks
+
+Limo uses [metadata-extractor](https://github.com/drewnoakes/metadata-extractor/) licensed under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) license which uses 
+[xmpcore](http://www.adobe.com/devnet/xmp.html) distributed under the 
+[BSD](http://www.adobe.com/devnet/xmp/library/eula-xmp-library-java.html) license.
