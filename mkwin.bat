@@ -17,7 +17,7 @@
    -srcfiles LICENSE.md ^
    -srcfiles build\limo.jar ^
    -appclass com.forman.limo.Main ^
-   -BappVersion=0.5 ^
+   -BappVersion=0.5.1 ^
    "-Bruntime=C:\Program Files\Java\jre1.8.0_144" ^
    -Bicon=src\com\forman\limo\resources\limo.ico ^
    -Bidentifier=com.forman.limo

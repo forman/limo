@@ -9,7 +9,7 @@ public class AppInfo {
     public final static ResourceBundle RES = ResourceBundle.getBundle("com.forman.limo.resources.limo");
 
     public static final String NAME = "Limo";
-    public static final String VERSION = "0.5";
+    public static final String VERSION = "0.5.1";
 
     public static final String FILE_EXTENSION = "limo";
     public static final String FILE_DESCRIPTION = MessageFormat.format(AppInfo.RES.getString("limo.project.files"), NAME);
@@ -20,5 +20,4 @@ public class AppInfo {
     }
 
     public final static boolean DEBUG = Boolean.getBoolean("limo.debug");
-
 }
